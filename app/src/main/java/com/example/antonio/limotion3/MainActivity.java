@@ -5,11 +5,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
     private SensorManager mSensorManager;
@@ -21,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView txt;
     private Float lastLux;
     private Long lastWaveTime;
+    MediaPlayer mp;
+
 
     Handler timerHandler1 = new Handler();
     Runnable timerRunnable1 = new Runnable() {
@@ -63,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         txt = findViewById(R.id.txt);
+        mp = MediaPlayer.create(this, R.raw.audio_1);
 
     }
 
@@ -92,8 +98,12 @@ public class MainActivity extends AppCompatActivity {
                             if (deltaWave <= 1200 && deltaWave >= 300) {
                                 txt.setText( "Double Wave !" );
                                 Log.d("Wave", "Double" );
+                                mp.pause();
+
+
                             } else {
                                 Log.d("Wave", "Single" );
+                                mp.start();
 
                             }
                         }
@@ -120,4 +130,5 @@ public class MainActivity extends AppCompatActivity {
 
 
     };
+
 }
