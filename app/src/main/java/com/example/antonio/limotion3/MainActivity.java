@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.io.File;
@@ -20,12 +21,21 @@ public class MainActivity extends AppCompatActivity {
 
     private Boolean isUp = true;
     private Boolean isHold = false;
+    private Boolean isPlay = false;
 
-    private TextView txt;
-    private Float lastLux;
+    private TextView txt, stat;
+    private Float lastLux ;
     private Long lastWaveTime;
+    private Long lastDown = 0l;
+
     private Integer countWave = 0;
+    private Integer cursorPlay = 0;
     MediaPlayer mp;
+    ImageView whoamiwith;
+    Integer downCounter = 0;
+
+    Integer audio[] = {R.raw.audio_0,R.raw.audio_1,R.raw.audio_2,R.raw.audio_3};
+    Integer cover[] = {R.raw.cover_0,R.raw.cover_1,R.raw.cover_2,R.raw.cover_3};
 
 
     Handler timerHandler1 = new Handler();
@@ -34,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
 
-            txt.setText( "" );
+            stat.setText( "" );
 //            timerHandler1.postDelayed(this, 0);
 
         }
@@ -55,6 +65,74 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    Handler timerHandler3 = new Handler();
+    Runnable timerRunnable3 = new Runnable() {
+
+        @Override
+        public void run() {
+            switch (countWave){
+                case 1:
+                    stat.setText( "a Wave! " );
+                    Log.d("WAVE","SINGLE");
+                    togglePlay();
+                    break;
+                case 2:
+                    stat.setText( "Double Wave! Next Song" );
+
+                    Log.d("WAVE","DOUBLE");
+                    nextSong();
+
+                    break;
+                case 3:
+                    stat.setText( "Triple Wave ! Prev Song" );
+                    Log.d("WAVE","TRIPLE");
+                    cursorPlay = (cursorPlay + 1) % 4;
+                    prevSong();
+
+
+                    break;
+            }
+
+
+            timerHandler1.postDelayed(timerRunnable1, 2000);
+
+        }
+    };
+
+    public void togglePlay(){
+        isPlay = ! isPlay;
+        if (isPlay) {
+            mp.start();
+            txt.setText( "Playing" );
+        } else {
+            mp.pause();
+            txt.setText( "Pause" );
+        }
+    }
+
+    public void nextSong() {
+        mp.stop();
+        cursorPlay = (cursorPlay + 1) % audio.length;
+        mp = MediaPlayer.create(this, audio[cursorPlay]);
+        whoamiwith.setImageResource(cover[cursorPlay]);
+        mp.start();
+        txt.setText( "Playing" );
+        isPlay = true;
+    }
+
+    public void prevSong() {
+        mp.stop();
+        cursorPlay = (cursorPlay - 2) % audio.length;
+        if (cursorPlay < 0) {
+            cursorPlay = (audio.length -1);
+        }
+        mp = MediaPlayer.create(this, audio[cursorPlay]);
+        whoamiwith.setImageResource(cover[cursorPlay]);
+        mp.start();
+        txt.setText( "Playing" );
+        isPlay = true;
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,13 +142,17 @@ public class MainActivity extends AppCompatActivity {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mLight = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         mSensorManager.registerListener(mLightSensorListener, mLight,
-                SensorManager.SENSOR_DELAY_GAME);
+                SensorManager.SENSOR_DELAY_FASTEST);
         timerHandler2.postDelayed(timerRunnable2, 0);
 
 
         txt = findViewById(R.id.txt);
-        mp = MediaPlayer.create(this, R.raw.audio_1);
+        mp = MediaPlayer.create(this, audio[cursorPlay]);
         lastWaveTime = System.currentTimeMillis();
+
+        whoamiwith = (ImageView)findViewById(R.id.whoamiwith);
+        whoamiwith.setImageResource(cover[cursorPlay]);
+        stat = findViewById(R.id.stat);
 
     }
 
@@ -79,64 +161,42 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
             Float curLux = sensorEvent.values[0];
-            Float deltaLux ;
+            Float deltaLux = 0f;
+            Long deltaWave = 0l;
             Log.d("curLux", String.valueOf(curLux));
 
-
-
             try {
+
                 if (lastLux > curLux ){
                     deltaLux = (lastLux - curLux)/lastLux;
                 } else {
                     deltaLux = (curLux - lastLux)/curLux;
-
                 }
-                Log.d("deltaLux", String.valueOf(deltaLux));
-                if (deltaLux >= .05) {
+
+                if (deltaLux >= .03) {
                     if (!isUp && ! isHold) {
                         isUp = true;
                         isHold = true;
-                        txt.setText( "Single Wave !" );
+
                         long curWaveTime = System.currentTimeMillis();
 
-                        Log.d("curWaveTime", String.valueOf(curWaveTime));
-
                         if (lastWaveTime != null ) {
-                            long deltaWave = (long) ((curWaveTime - lastWaveTime));
+                            deltaWave = (long) ((curWaveTime - lastWaveTime));
 
-
-                            Log.d("deltaWave", String.valueOf(deltaWave));
-                            if (deltaWave <= 2100 && deltaWave >= 1400) {
+                            if (deltaWave <= 2200 && deltaWave >= 100) {
                                 countWave = (countWave + 1) % 4;
-                                switch (countWave){
-                                    case 1:
-                                        Log.d("Wave", "Single" );
-                                        txt.setText( "a Wave !" );
-                                        break;
-                                    case 2:
-                                        Log.d("Wave", "Double" );
-                                        txt.setText( "Double Wave !" );
-                                        break;
-                                    case 3:
-                                        Log.d("Wave", "Triple" );
-                                        txt.setText( "Triple Wave !" );
-                                        countWave = 0;
-                                        break;
-                                }
-
-
-//                                mp.pause();
-
 
                             } else {
                                 countWave = 1;
-                                Log.d("Wave", "Single" );
-//                                mp.start();
+                                timerHandler3.postDelayed(timerRunnable3, 4000);
 
                             }
+                            Log.d("Wave", countWave + ", "+deltaLux+","+deltaWave );
+
                         }
+
                         lastWaveTime = curWaveTime;
-                        timerHandler1.postDelayed(timerRunnable1, 1000);
+
                     } else if (isUp && !isHold){
                         isUp = false;
 
@@ -144,10 +204,22 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
+
             } catch (Exception e) {
+                lastLux = curLux;
+                downCounter = 0;
+            }
+
+            if (lastLux> curLux) {
+                lastLux = curLux;
+            } else if (deltaLux >=0.10) {
+                lastLux = curLux;
+
 
             }
-            lastLux = curLux;
+
+
+
 
         }
 
