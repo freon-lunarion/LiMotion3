@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView txt;
     private Float lastLux;
     private Long lastWaveTime;
+    private Integer countWave = 0;
     MediaPlayer mp;
 
 
@@ -49,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
                 isHold = false;
             }
 
-            timerHandler2.postDelayed(this, 800);
+            timerHandler2.postDelayed(this, 500);
 
         }
     };
@@ -63,12 +64,13 @@ public class MainActivity extends AppCompatActivity {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mLight = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         mSensorManager.registerListener(mLightSensorListener, mLight,
-                SensorManager.SENSOR_DELAY_NORMAL);
+                SensorManager.SENSOR_DELAY_GAME);
         timerHandler2.postDelayed(timerRunnable2, 0);
 
 
         txt = findViewById(R.id.txt);
         mp = MediaPlayer.create(this, R.raw.audio_1);
+        lastWaveTime = System.currentTimeMillis();
 
     }
 
@@ -79,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
             Float curLux = sensorEvent.values[0];
             Float deltaLux ;
 
+
             try {
                 if (lastLux > curLux ){
                     deltaLux = (lastLux - curLux)/lastLux;
@@ -86,24 +89,47 @@ public class MainActivity extends AppCompatActivity {
                     deltaLux = (curLux - lastLux)/curLux;
 
                 }
-
-                if (deltaLux >= .3) {
-                    if (!isUp && !isHold) {
+                Log.d("deltaLux", String.valueOf(deltaLux));
+                if (deltaLux >= .05) {
+                    if (!isUp && ! isHold) {
                         isUp = true;
                         isHold = true;
                         txt.setText( "Single Wave !" );
-                        long curWaveTime = System.nanoTime();
-                        if (lastWaveTime != null) {
-                            long deltaWave = (long) ((curWaveTime - lastWaveTime) /1e6);
-                            if (deltaWave <= 1200 && deltaWave >= 300) {
-                                txt.setText( "Double Wave !" );
-                                Log.d("Wave", "Double" );
-                                mp.pause();
+                        long curWaveTime = System.currentTimeMillis();
+
+                        Log.d("curWaveTime", String.valueOf(curWaveTime));
+
+                        if (lastWaveTime != null ) {
+                            long deltaWave = (long) ((curWaveTime - lastWaveTime));
+
+
+                            Log.d("deltaWave", String.valueOf(deltaWave));
+                            if (deltaWave <= 2100 && deltaWave >= 1400) {
+                                countWave = (countWave + 1) % 4;
+                                switch (countWave){
+                                    case 1:
+                                        Log.d("Wave", "Single" );
+                                        txt.setText( "a Wave !" );
+                                        break;
+                                    case 2:
+                                        Log.d("Wave", "Double" );
+                                        txt.setText( "Double Wave !" );
+                                        break;
+                                    case 3:
+                                        Log.d("Wave", "Triple" );
+                                        txt.setText( "Triple Wave !" );
+                                        countWave = 0;
+                                        break;
+                                }
+
+
+//                                mp.pause();
 
 
                             } else {
+                                countWave = 1;
                                 Log.d("Wave", "Single" );
-                                mp.start();
+//                                mp.start();
 
                             }
                         }
