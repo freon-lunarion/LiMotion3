@@ -80,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
         public void onSensorChanged(SensorEvent sensorEvent) {
             Float curLux = sensorEvent.values[0];
             Float deltaLux ;
+            Log.d("curLux", String.valueOf(curLux));
+
 
 
             try {
