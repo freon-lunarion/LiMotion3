@@ -212,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (lastLux> curLux) {
                 lastLux = curLux;
-            } else if (deltaLux >=0.10) {
+            } else if (deltaLux >=.03) {
                 lastLux = curLux;
 
 
